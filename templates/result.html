@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your personalized travel itinerary generated with intelligent planning">
+    <title>Travel Planner</title>
+    <style>
+        :root {
+            --primary-color: #4d43fe;
+            --accent-color: #4d43fe;
+            --text-color: #333;
+            --background-color: #f8f9fa;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            padding: 1.5rem 0;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .plan-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-content {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .plan-content :is(h1, h2, h3) {
+            color: var(--primary-color);
+            margin: 1rem 0 0.5rem;
+            line-height: 1.3;
+        }
+
+        .plan-content p {
+            margin: 0.5rem 0;
+        }
+
+        .plan-content pre {
+            background: #f4f4f4;
+            padding: 0.8rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .plan-content ul,
+        .plan-content ol {
+            padding-left: 1.2rem;
+            margin: 0.5rem 0;
+        }
+
+        .plan-content li {
+            margin-bottom: 0.25rem;
+        }
+
+        .navigation {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.7rem 1.2rem;
+            background-color: var(--accent-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        strong {
+            color: var(--primary-color);
+        }
+
+        .header {
+            user-select: none;
+        }
+
+        *::selection {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .plan-container {
+                padding: 1rem;
+            }
+            
+            .header {
+                padding: 1rem 0;
+                margin-bottom: 1rem;
+            }
+
+            .plan-content {
+                font-size: 0.95rem;
+            }
+        }
+        table{
+          border-collapse: collapse;
+        }
+        td,th{
+          text-align: center;
+        }
+        th{
+          background-color: #4d43fef7;
+          color: black;
+          padding: 0px 10px 0px 10px;
+        }
+        td{
+          padding: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Your Smart Travel Planner</h1>
+        <p>Generated with precision and care for your journey</p>
+    </header>
+
+    <main class="plan-container">
+        <div id="plan-content" class="plan-content"></div>
+    </main>
+
+    <nav class="navigation">
+        <a href="/" class="btn" aria-label="Create new travel plan">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Create another travel plan
+        </a>
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
+
+    <script>
+        (function() {
+            'use strict';
+            
+            const markdownConfig = {
+                gfm: true,
+                breaks: true,
+                headerIds: false,
+                sanitize: false,
+                smartypants: true,
+                xhtml: true
+            };
+
+            marked.setOptions(markdownConfig);
+
+            function safeMarkdownToHtml(markdown) {
+                try {
+                    const rawHtml = marked.parse(markdown);
+                    return DOMPurify.sanitize(rawHtml, {
+                        ADD_TAGS: ['iframe'],
+                        ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling']
+                    });
+                } catch (error) {
+                    console.error('Markdown processing error:', error);
+                    return `<p class="error">⚠️ Error generating itinerary. Please try again.</p>`;
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const planContainer = document.getElementById('plan-content');
+                
+                try {
+                    const rawMarkdown = `{{ plan }}`;
+                    const cleanHtml = safeMarkdownToHtml(rawMarkdown);
+                    planContainer.innerHTML = cleanHtml;
+                    
+                    // Remove extra newlines and spacing
+                    planContainer.querySelectorAll('br').forEach(br => {
+                        if (br.previousSibling?.nodeType === 1 && br.nextSibling?.nodeType === 1) {
+                            br.remove();
+                        }
+                    });
+                    
+                } catch (error) {
+                    planContainer.innerHTML = `
+                        <div class="error-state">
+                            <h2>⚠️ We encountered a problem</h2>
+                            <p>Our team has been notified. Please try refreshing the page.</p>
+                        </div>
+                    `;
+                }
+            });
+        })();
+    </script>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        let tables=document.querySelectorAll('table');
+      
+      for(let table of tables){
+        table.setAttribute('border','2');
+        let html=table.outerHTML;
+        table.outerHTML=`<div style="display:flex;align-contents:center;justify-content:center">${html}</div>`;
+      }
+      });
+      
+    </script>
+</body>
+</html>
