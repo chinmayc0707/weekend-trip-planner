@@ -1,5 +1,6 @@
 # app.py
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, Response, stream_with_context
+import json
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
@@ -50,8 +51,9 @@ def generate_trip_plan(inputs, api_key=None):
     - At last give the detailed list of budget you have used for the trip in tabular format
     """
 
-    response = model.generate_content(prompt)
-    return response.text
+    response = model.generate_content(prompt, stream=True)
+    for chunk in response:
+        yield chunk.text
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -70,13 +72,21 @@ def index():
 
         try:
             api_key = request.form.get('api_key')
-            plan = generate_trip_plan(inputs, api_key)
-            return render_template('result.html', plan=plan)
+            return render_template('result.html', inputs=json.dumps(inputs), api_key=api_key)
         except Exception as e:
             return render_template('error.html', error=str(e))
 
     return render_template('index.html')
 
+
+@app.route('/stream', methods=['POST'])
+def stream():
+    data = request.json
+    inputs = data.get('inputs', {})
+    api_key = data.get('api_key')
+    return Response(stream_with_context(generate_trip_plan(inputs, api_key)), mimetype='text/plain')
+
 if __name__ == '__main__':
+
 
     app.run(debug=True)

@@ -126,11 +126,11 @@
             body {
                 padding: 1rem;
             }
-            
+
             .plan-container {
                 padding: 1rem;
             }
-            
+
             .header {
                 padding: 1rem 0;
                 margin-bottom: 1rem;
@@ -154,6 +154,21 @@
         td{
           padding: 4px;
         }
+
+        .typewriter-icon {
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 8px;
+            color: #4d43fe;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.5; transform: scale(1); }
+        }
+
     </style>
 </head>
 <body>
@@ -181,7 +196,7 @@
     <script>
         (function() {
             'use strict';
-            
+
             const markdownConfig = {
                 gfm: true,
                 breaks: true,
@@ -206,43 +221,74 @@
                 }
             }
 
-            document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('DOMContentLoaded', async () => {
                 const planContainer = document.getElementById('plan-content');
-                
+
                 try {
-                    const rawMarkdown = `{{ plan }}`;
-                    const cleanHtml = safeMarkdownToHtml(rawMarkdown);
-                    planContainer.innerHTML = cleanHtml;
-                    
+                    const inputsRaw = `{{ inputs | safe }}`;
+                    const apiKey = `{{ api_key }}`;
+                    const inputs = JSON.parse(inputsRaw);
+
+                    const response = await fetch('/stream', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            inputs: inputs,
+                            api_key: apiKey
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    let rawMarkdown = '';
+
+                    const typewriterIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4d43fe" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="typewriter-icon"><path d="M4 14v4h16v-4"></path><path d="M16 14V6H8v8"></path><path d="M12 18v.01"></path><path d="M8 18v.01"></path><path d="M16 18v.01"></path><path d="M10 14h4"></path></svg>`;
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        rawMarkdown += decoder.decode(value, { stream: true });
+                        planContainer.innerHTML = safeMarkdownToHtml(rawMarkdown) + typewriterIcon;
+                    }
+
+                    // Final decode
+                    rawMarkdown += decoder.decode();
+                    planContainer.innerHTML = safeMarkdownToHtml(rawMarkdown);
+
                     // Remove extra newlines and spacing
                     planContainer.querySelectorAll('br').forEach(br => {
                         if (br.previousSibling?.nodeType === 1 && br.nextSibling?.nodeType === 1) {
                             br.remove();
                         }
                     });
-                    
+
+                    // Table styling from the original script
+                    let tables = document.querySelectorAll('table');
+                    for(let table of tables) {
+                        table.setAttribute('border','2');
+                        let html = table.outerHTML;
+                        table.outerHTML = `<div style="display:flex;align-contents:center;justify-content:center">${html}</div>`;
+                    }
+
                 } catch (error) {
+                    console.error('Error fetching stream:', error);
                     planContainer.innerHTML = `
                         <div class="error-state">
                             <h2>⚠️ We encountered a problem</h2>
-                            <p>Our team has been notified. Please try refreshing the page.</p>
+                            <p>Error generating itinerary. Please try again.</p>
                         </div>
                     `;
                 }
             });
         })();
     </script>
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        let tables=document.querySelectorAll('table');
-      
-      for(let table of tables){
-        table.setAttribute('border','2');
-        let html=table.outerHTML;
-        table.outerHTML=`<div style="display:flex;align-contents:center;justify-content:center">${html}</div>`;
-      }
-      });
-      
-    </script>
+
 </body>
 </html>
