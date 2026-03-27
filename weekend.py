@@ -65,6 +65,7 @@ def index():
             'accommodation': request.form['accommodation'],
             'conditions': request.form['conditions'],
             'additional_details': request.form.get('additional_details', '')
+            'conditions': request.form['conditions']
         }
 
         try:
