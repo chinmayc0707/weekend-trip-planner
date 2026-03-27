@@ -155,18 +155,21 @@
           padding: 4px;
         }
 
-        .typewriter-icon {
-            display: inline-block;
-            vertical-align: middle;
-            margin-left: 8px;
+        .cursor {
             color: #4d43fe;
-            animation: pulse 1.5s infinite ease-in-out;
+            display: inline-block;
+            vertical-align: baseline;
+            margin-left: 2px;
+            font-weight: bold;
         }
 
-        @keyframes pulse {
-            0% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.1); }
-            100% { opacity: 0.5; transform: scale(1); }
+        .cursor.blinking {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
         }
 
     </style>
@@ -225,9 +228,8 @@
                 const planContainer = document.getElementById('plan-content');
 
                 try {
-                    const inputsRaw = `{{ inputs | safe }}`;
-                    const apiKey = `{{ api_key }}`;
-                    const inputs = JSON.parse(inputsRaw);
+                    const inputs = {{ inputs | safe }};
+                    const apiKey = {{ api_key | tojson | safe }};
 
                     const response = await fetch('/stream', {
                         method: 'POST',
@@ -248,14 +250,21 @@
                     const decoder = new TextDecoder('utf-8');
                     let rawMarkdown = '';
 
-                    const typewriterIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4d43fe" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="typewriter-icon"><path d="M4 14v4h16v-4"></path><path d="M16 14V6H8v8"></path><path d="M12 18v.01"></path><path d="M8 18v.01"></path><path d="M16 18v.01"></path><path d="M10 14h4"></path></svg>`;
+                    const blinkingCursor = `<span class="cursor blinking">▌</span>`;
+                    const typingCursor = `<span class="cursor">▌</span>`;
 
                     while (true) {
+                        // Start blinking while waiting for the next chunk
+                        planContainer.innerHTML = safeMarkdownToHtml(rawMarkdown + blinkingCursor);
+
                         const { done, value } = await reader.read();
                         if (done) break;
 
                         rawMarkdown += decoder.decode(value, { stream: true });
-                        planContainer.innerHTML = safeMarkdownToHtml(rawMarkdown) + typewriterIcon;
+
+                        // Stop blinking when text arrives
+                        planContainer.innerHTML = safeMarkdownToHtml(rawMarkdown + typingCursor);
+                        await new Promise(r => setTimeout(r, 50)); // Short delay to show solid cursor before waiting again
                     }
 
                     // Final decode
