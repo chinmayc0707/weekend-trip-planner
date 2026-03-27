@@ -33,6 +33,7 @@ def generate_trip_plan(inputs, api_key=None):
     Dining Preferences: {inputs['dining']}
     Accommodation Type: {inputs['accommodation']}
     Real-time Conditions: {inputs['conditions'] if inputs['conditions'] else 'N/A'}
+    Additional Details: {inputs['additional_details'] if inputs['additional_details'] else 'None'}
     current Temperature: {openweather.get_weather_data(inputs['destination'])} Celsius
 
     The plan should include:
@@ -62,6 +63,8 @@ def index():
             'activities': request.form['activities'],
             'dining': request.form['dining'],
             'accommodation': request.form['accommodation'],
+            'conditions': request.form['conditions'],
+            'additional_details': request.form.get('additional_details', '')
             'conditions': request.form['conditions']
         }
 
