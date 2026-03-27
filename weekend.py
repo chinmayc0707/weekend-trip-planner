@@ -9,9 +9,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Configure Gemini API
-genai.configure(api_key=os.environ['GEMINI_API_KEY'])
-model = genai.GenerativeModel('gemma-3-27b-it')
+# Configure Gemini API (deferred to generate_trip_plan)
 
 
 # Decision Tree Dataset (From previous examples)
