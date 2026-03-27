@@ -26,6 +26,7 @@ pip install -r requirements.txt
 Create a `.env` file in the root of the project to specify any server-wide fallback keys (optional if relying purely on frontend):
 ```
 GEMINI_API_KEY=your_default_server_api_key_here
+OPENWEATHER_API_KEY=your_openweather_api_key_here
 ```
 
 ### 4. Running the Application
