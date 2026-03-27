@@ -111,6 +111,7 @@
     <div class="container">
         <h1>Plan Your Stress-Free Trip</h1>
         <form method="POST" id="form">
+            <input type="hidden" name="api_key" id="api_key_input">
             <label>Budget:</label>
             <input type="number" placeholder="Enter amount in ₹" name="budget" required>
 
@@ -143,18 +144,36 @@
             <label>Current Conditions (weather, events, etc.):</label>
             <textarea name="conditions" rows="3"></textarea>
             
+
+            <label>Additional Details (What else should the AI know?):</label>
+            <textarea name="additional_details" rows="3" placeholder="e.g., I have a dog, I am traveling with a baby, etc."></textarea>
+
             <button id="submit" type="submit">Generate Trip Plan</button>
             
             
+
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let apiKey = sessionStorage.getItem('gemini_api_key');
+        if (!apiKey) {
+            apiKey = prompt("Please enter your Gemini API Key (leave blank to use server default):");
+            if (apiKey) {
+                sessionStorage.setItem('gemini_api_key', apiKey);
+            }
+        }
+        if (apiKey) {
+            document.getElementById('api_key_input').value = apiKey;
+        }
+    });
+
     document.getElementById('submit').addEventListener('click', function(event) {
-        
         const form = document.getElementById('form');
         if (form.checkValidity()) {
             alert('Generating your trip plan... It may take a moment. Click "OK" to proceed.');
         }
     });
 </script>
+
 
 
         </form>

@@ -9,9 +9,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Configure Gemini API
-genai.configure(api_key=os.environ['GEMINI_API_KEY'])
-model = genai.GenerativeModel('gemma-3-27b-it')
+# Configure Gemini API (deferred to generate_trip_plan)
 
 
 # Decision Tree Dataset (From previous examples)
@@ -20,7 +18,13 @@ model = genai.GenerativeModel('gemma-3-27b-it')
 
 
 
-def generate_trip_plan(inputs):
+def generate_trip_plan(inputs, api_key=None):
+    if api_key:
+        genai.configure(api_key=api_key)
+    else:
+        genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+    model = genai.GenerativeModel("gemma-3-27b-it")
+
     prompt = f"""Create a detailed stress-free trip plan considering the following inputs:
     Budget: {inputs['budget']} rupees
     Starting Point: {inputs['starting_point']}
@@ -29,6 +33,7 @@ def generate_trip_plan(inputs):
     Dining Preferences: {inputs['dining']}
     Accommodation Type: {inputs['accommodation']}
     Real-time Conditions: {inputs['conditions'] if inputs['conditions'] else 'N/A'}
+    Additional Details: {inputs['additional_details'] if inputs['additional_details'] else 'None'}
     current Temperature: {openweather.get_weather_data(inputs['destination'])} Celsius
 
     The plan should include:
@@ -44,7 +49,7 @@ def generate_trip_plan(inputs):
     - Its a weekend trip so duration should be 2 days and 1 night
     - At last give the detailed list of budget you have used for the trip in tabular format
     """
-    
+
     response = model.generate_content(prompt)
     return response.text
 
@@ -58,15 +63,17 @@ def index():
             'activities': request.form['activities'],
             'dining': request.form['dining'],
             'accommodation': request.form['accommodation'],
-            'conditions': request.form['conditions']
+            'conditions': request.form['conditions'],
+            'additional_details': request.form.get('additional_details', '')
         }
-        
+
         try:
-            plan = generate_trip_plan(inputs)
+            api_key = request.form.get('api_key')
+            plan = generate_trip_plan(inputs, api_key)
             return render_template('result.html', plan=plan)
         except Exception as e:
             return render_template('error.html', error=str(e))
-    
+
     return render_template('index.html')
 
 if __name__ == '__main__':
