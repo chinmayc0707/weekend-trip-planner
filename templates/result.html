@@ -154,24 +154,9 @@
         td{
           padding: 4px;
         }
-
-        .cursor {
-            color: #4d43fe;
-            display: inline-block;
-            vertical-align: baseline;
-            margin-left: 2px;
-            font-weight: bold;
+        th>strong{
+          color: white;
         }
-
-        .cursor.blinking {
-            animation: blink 1s step-end infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-
     </style>
 </head>
 <body>
@@ -228,8 +213,9 @@
                 const planContainer = document.getElementById('plan-content');
 
                 try {
-                    const inputs = {{ inputs | safe }};
-                    const apiKey = {{ api_key | tojson | safe }};
+                    const inputsRaw = `{{ inputs | safe }}`;
+                    const apiKey = `{{ api_key }}`;
+                    const inputs = JSON.parse(inputsRaw);
 
                     const response = await fetch('/stream', {
                         method: 'POST',
@@ -250,21 +236,12 @@
                     const decoder = new TextDecoder('utf-8');
                     let rawMarkdown = '';
 
-                    const blinkingCursor = `<span class="cursor blinking">▌</span>`;
-                    const typingCursor = `<span class="cursor">▌</span>`;
-
                     while (true) {
-                        // Start blinking while waiting for the next chunk
-                        planContainer.innerHTML = safeMarkdownToHtml(rawMarkdown + blinkingCursor);
-
                         const { done, value } = await reader.read();
                         if (done) break;
 
                         rawMarkdown += decoder.decode(value, { stream: true });
-
-                        // Stop blinking when text arrives
-                        planContainer.innerHTML = safeMarkdownToHtml(rawMarkdown + typingCursor);
-                        await new Promise(r => setTimeout(r, 50)); // Short delay to show solid cursor before waiting again
+                        planContainer.innerHTML = safeMarkdownToHtml(rawMarkdown);
                     }
 
                     // Final decode
