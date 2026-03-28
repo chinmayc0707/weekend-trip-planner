@@ -157,6 +157,17 @@
         th>strong{
           color: white;
         }
+
+        .cursor {
+            color: #4d43fe;
+            animation: blink 1s step-end infinite;
+        }
+        .cursor.typing {
+            animation: none;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -236,12 +247,22 @@
                     const decoder = new TextDecoder('utf-8');
                     let rawMarkdown = '';
 
+                    let typingTimeout;
                     while (true) {
                         const { done, value } = await reader.read();
                         if (done) break;
 
                         rawMarkdown += decoder.decode(value, { stream: true });
-                        planContainer.innerHTML = safeMarkdownToHtml(rawMarkdown);
+
+                        // Simply add the cursor string to the markdown before parsing
+                        let rendered = safeMarkdownToHtml(rawMarkdown);
+                        planContainer.innerHTML = rendered + '<span class="cursor typing">▌</span>';
+
+                        clearTimeout(typingTimeout);
+                        typingTimeout = setTimeout(() => {
+                            const cursorEl = planContainer.querySelector('.cursor');
+                            if (cursorEl) cursorEl.classList.remove('typing');
+                        }, 500);
                     }
 
                     // Final decode
