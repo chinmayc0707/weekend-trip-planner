@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -140,25 +141,51 @@
                 font-size: 0.95rem;
             }
         }
-        table{
-          border-collapse: collapse;
+
+        table {
+            border-collapse: collapse;
         }
-        td,th{
-          text-align: center;
+
+        td,
+        th {
+            text-align: center;
         }
-        th{
-          background-color: #4d43fef7;
-          color: black;
-          padding: 0px 10px 0px 10px;
+
+        th {
+            background-color: #4d43fef7;
+            color: black;
+            padding: 0px 10px 0px 10px;
         }
-        td{
-          padding: 4px;
+
+        td {
+            padding: 4px;
         }
-        th>strong{
-          color: white;
+
+        th>strong {
+            color: white;
+        }
+
+        .cursor {
+            color: #4d43fe;
+            animation: blink 1s step-end infinite;
+        }
+
+        .cursor.typing {
+            animation: none;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        a {
+            color: #4d43fe;
         }
     </style>
 </head>
+
 <body>
     <header class="header">
         <h1>Your Smart Travel Planner</h1>
@@ -171,8 +198,9 @@
 
     <nav class="navigation">
         <a href="/" class="btn" aria-label="Create new travel plan">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 5v14M5 12h14"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M5 12h14" />
             </svg>
             Create another travel plan
         </a>
@@ -182,7 +210,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
 
     <script>
-        (function() {
+        (function () {
             'use strict';
 
             const markdownConfig = {
@@ -201,7 +229,7 @@
                     const rawHtml = marked.parse(markdown);
                     return DOMPurify.sanitize(rawHtml, {
                         ADD_TAGS: ['iframe'],
-                        ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling']
+                        ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target']
                     });
                 } catch (error) {
                     console.error('Markdown processing error:', error);
@@ -236,17 +264,31 @@
                     const decoder = new TextDecoder('utf-8');
                     let rawMarkdown = '';
 
+                    let typingTimeout;
                     while (true) {
                         const { done, value } = await reader.read();
                         if (done) break;
 
                         rawMarkdown += decoder.decode(value, { stream: true });
-                        planContainer.innerHTML = safeMarkdownToHtml(rawMarkdown);
+
+                        // Inject cursor placeholder into markdown so it stays inline
+                        const cursorPlaceholder = '\u200B%%CURSOR%%';
+                        let rendered = safeMarkdownToHtml(rawMarkdown + cursorPlaceholder);
+                        rendered = rendered.replace(cursorPlaceholder, '<span class="cursor typing">▌</span>');
+                        planContainer.innerHTML = rendered;
+                        planContainer.querySelectorAll('a').forEach(a => { a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener noreferrer'); });
+
+                        clearTimeout(typingTimeout);
+                        typingTimeout = setTimeout(() => {
+                            const cursorEl = planContainer.querySelector('.cursor');
+                            if (cursorEl) cursorEl.classList.remove('typing');
+                        }, 500);
                     }
 
                     // Final decode
                     rawMarkdown += decoder.decode();
                     planContainer.innerHTML = safeMarkdownToHtml(rawMarkdown);
+                    planContainer.querySelectorAll('a').forEach(a => { a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener noreferrer'); });
 
                     // Remove extra newlines and spacing
                     planContainer.querySelectorAll('br').forEach(br => {
@@ -257,8 +299,8 @@
 
                     // Table styling from the original script
                     let tables = document.querySelectorAll('table');
-                    for(let table of tables) {
-                        table.setAttribute('border','2');
+                    for (let table of tables) {
+                        table.setAttribute('border', '2');
                         let html = table.outerHTML;
                         table.outerHTML = `<div style="display:flex;align-contents:center;justify-content:center">${html}</div>`;
                     }
@@ -277,4 +319,5 @@
     </script>
 
 </body>
+
 </html>
