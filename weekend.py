@@ -84,7 +84,11 @@ def stream():
     data = request.json
     inputs = data.get('inputs', {})
     api_key = data.get('api_key')
-    return Response(stream_with_context(generate_trip_plan(inputs, api_key)), mimetype='text/plain')
+    response = Response(stream_with_context(generate_trip_plan(inputs, api_key)), mimetype='text/plain')
+    response.headers['X-Accel-Buffering'] = 'no'
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['Connection'] = 'keep-alive'
+    return response
 
 if __name__ == '__main__':
 
